@@ -44,6 +44,11 @@ def redirect_to_login():
 
 ### Pages ###
 
+@router.get("/test")
+async def test(request: Request):
+    return templates.TemplateResponse("home.html", {"request": request})
+
+
 @router.get("/todo-page")
 async def render_todo_page(request: Request, db: db_dependency):
     try:
@@ -90,7 +95,6 @@ async def render_edit_todo_page(request: Request, todo_id: int, db: db_dependenc
         return redirect_to_login()
 
 
-
 ### Endpoints ###
 @router.get("/", status_code=status.HTTP_200_OK)
 async def read_all(user: user_dependency, db: db_dependency):
@@ -104,7 +108,7 @@ async def read_todo(user: user_dependency, db: db_dependency, todo_id: int = Pat
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication Failed')
 
-    todo_model = db.query(Todos).filter(Todos.id == todo_id)\
+    todo_model = db.query(Todos).filter(Todos.id == todo_id) \
         .filter(Todos.owner_id == user.get('id')).first()
     if todo_model is not None:
         return todo_model
@@ -129,7 +133,7 @@ async def update_todo(user: user_dependency, db: db_dependency,
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication Failed')
 
-    todo_model = db.query(Todos).filter(Todos.id == todo_id)\
+    todo_model = db.query(Todos).filter(Todos.id == todo_id) \
         .filter(Todos.owner_id == user.get('id')).first()
     if todo_model is None:
         raise HTTPException(status_code=404, detail='Todo not found.')
@@ -148,22 +152,10 @@ async def delete_todo(user: user_dependency, db: db_dependency, todo_id: int = P
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication Failed')
 
-    todo_model = db.query(Todos).filter(Todos.id == todo_id)\
+    todo_model = db.query(Todos).filter(Todos.id == todo_id) \
         .filter(Todos.owner_id == user.get('id')).first()
     if todo_model is None:
         raise HTTPException(status_code=404, detail='Todo not found.')
     db.query(Todos).filter(Todos.id == todo_id).filter(Todos.owner_id == user.get('id')).delete()
 
     db.commit()
-
-
-
-
-
-
-
-
-
-
-
-

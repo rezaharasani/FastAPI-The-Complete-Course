@@ -3,11 +3,14 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, Path
 from starlette import status
-from models import Todos
-from database import SessionLocal
+from ..models import Todos
+from ..database import SessionLocal
 from .auth import get_current_user
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/todos",
+    tags=["todos"]
+)
 
 
 def get_db():
@@ -41,7 +44,7 @@ async def read_todo(user: user_dependency, db: db_dependency, todo_id: int = Pat
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication Failed')
 
-    todo_model = db.query(Todos).filter(Todos.id == todo_id)\
+    todo_model = db.query(Todos).filter(Todos.id == todo_id) \
         .filter(Todos.owner_id == user.get('id')).first()
     if todo_model is not None:
         return todo_model
@@ -66,7 +69,7 @@ async def update_todo(user: user_dependency, db: db_dependency,
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication Failed')
 
-    todo_model = db.query(Todos).filter(Todos.id == todo_id)\
+    todo_model = db.query(Todos).filter(Todos.id == todo_id) \
         .filter(Todos.owner_id == user.get('id')).first()
     if todo_model is None:
         raise HTTPException(status_code=404, detail='Todo not found.')
@@ -78,29 +81,3 @@ async def update_todo(user: user_dependency, db: db_dependency,
 
     db.add(todo_model)
     db.commit()
-
-
-@router.delete("/todo/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_todo(user: user_dependency, db: db_dependency, todo_id: int = Path(gt=0)):
-    if user is None:
-        raise HTTPException(status_code=401, detail='Authentication Failed')
-
-    todo_model = db.query(Todos).filter(Todos.id == todo_id)\
-        .filter(Todos.owner_id == user.get('id')).first()
-    if todo_model is None:
-        raise HTTPException(status_code=404, detail='Todo not found.')
-    db.query(Todos).filter(Todos.id == todo_id).filter(Todos.owner_id == user.get('id')).delete()
-
-    db.commit()
-
-
-
-
-
-
-
-
-
-
-
-

@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette import status
-from database import SessionLocal
-from models import Users
+from ..database import SessionLocal
+from ..models import Users
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
@@ -22,6 +22,11 @@ bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
 
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+
 class CreateUserRequest(BaseModel):
     username: str
     email: str
@@ -30,11 +35,6 @@ class CreateUserRequest(BaseModel):
     password: str
     role: str
     phone_number: str
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
 
 
 def get_db():
@@ -79,9 +79,32 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
                             detail='Could not validate user.')
 
 
+@router.post("/token", response_model=Token)
+def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+                           db: db_dependency):
+    user = authenticate_user(form_data.username, form_data.password, db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail='Could not validate user.')
+    token = create_access_token(user.username, user.id, user.role, timedelta(minutes=20))
+
+    return {'access_token': token, 'token_type': 'bearer'}
+
+
 @router.post("/", status_code=status.HTTP_201_CREATED)
-async def create_user(db: db_dependency,
-                      create_user_request: CreateUserRequest):
+def create_user(db: db_dependency, create_user_request: CreateUserRequest):
+    if db.query(Users).filter(Users.username == create_user_request.username).first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail=f'Username already exists.')
+
+    if db.query(Users).filter(Users.email == create_user_request.email).first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail=f'Email address already exists.')
+
+    if db.query(Users).filter(Users.phone_number == create_user_request.phone_number).first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT,
+                            detail=f'Phone number already exists.')
+
     create_user_model = Users(
         email=create_user_request.email,
         username=create_user_request.username,
@@ -95,22 +118,4 @@ async def create_user(db: db_dependency,
 
     db.add(create_user_model)
     db.commit()
-
-
-@router.post("/token", response_model=Token)
-async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-                                 db: db_dependency):
-    user = authenticate_user(form_data.username, form_data.password, db)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail='Could not validate user.')
-    token = create_access_token(user.username, user.id, user.role, timedelta(minutes=20))
-
-    return {'access_token': token, 'token_type': 'bearer'}
-
-
-
-
-
-
-
+    return create_user_model

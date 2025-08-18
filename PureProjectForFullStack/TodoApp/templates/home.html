@@ -1,33 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <!-- Required meta tags -->
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/todo/css/base.css') }}">
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', path='/todo/css/bootstrap.css') }}">
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-    <title>TodoApp</title>
-
-</head>
-<body>
-
-<div>
-    <nav class="navbar navbar-expand-md navbar-dark main-color fixed-top">
-        <a class="navbar-brand" href="#">Todo App</a>
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
-                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-                <li class="nav-item active">
-                    <a class="nav-link" href="#">Home </a>
-                </li>
-            </ul>
-        </div>
-    </nav>
-</div>
+{% include 'layout.html' %}
 
 <div class="container">
     <div class="card text-center">
@@ -39,46 +10,53 @@
             <p class="card-text">Information regarding stuff that needs to be complete</p>
 
             <table class="table table-hover">
-  <thead>
-    <tr>
-      <th scope="col">#</th>
-      <th scope="col">Info</th>
-      <th scope="col">Actions</th>
+                <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Info</th>
+                    <th scope="col">Actions</th>
 
-    </tr>
-  </thead>
-  <tbody>
+                </tr>
+                </thead>
+                <tbody>
 
-<tr class="pointer" >
+                {% for todo in todos %}
+                {% if todo.complete == False %}
+                <tr class="pointer">
+                    <td>{{ loop.index }}</td>
+                    <td>{{ todo.title }}</td>
+                    <td>
+                        <button onclick="window.location.href='/todos/complete/{{ todo.id }}'" type="button"
+                                class="btn btn-success">Complete
+                        </button>
+                        <button onclick="window.location.href='edit-todo/{{ todo.id }}'" type="button"
+                                class="btn btn-info">Edit
+                        </button>
+                    </td>
+                </tr>
 
-      <td>1</td>
-      <td id="td1">Take out the trash </td>
-      <td><button type="button" class="btn btn-success">Complete</button> <button type="button" class="btn btn-danger">Delete</button> </td>
-    </tr>
+                {% else %}
 
-  <tr class="pointer">
+                <tr class="pointer alert alert-success">
+                    <td>{{ loop.index }}</td>
+                    <td class="strike-through-td">{{ todo.title }}</td>
+                    <td>
+                        <button onclick="window.location.href='/todos/complete/{{ todo.id }}'" type="button"
+                                class="btn btn-danger">Undo
+                        </button>
+                        <button onclick="window.location.href='edit-todo/{{ todo.id }}'" type="button"
+                                class="btn btn-info">Edit
+                        </button>
+                    </td>
+                </tr>
 
-      <td>2</td>
-      <td>Take out the trash</td>
-      <td><button type="button" class="btn btn-success">Complete</button> <button type="button" class="btn btn-danger">Delete</button> </td>
-    </tr>
+                {% endif %}
+                {% endfor %}
 
-  <tr class="pointer" >
+                </tbody>
+            </table>
 
-      <td>3</td>
-      <td >Take out the trash </td>
-      <td><button type="button" class="btn btn-success">Complete</button> <button type="button" class="btn btn-danger">Delete</button> </td>
-    </tr>
-
-  </tbody>
-</table>
-
-            <a href="#" class="btn btn-primary">Add a new Todo!</a>
+            <a href="add-todo" class="btn btn-primary">Add a new Todo!</a>
         </div>
     </div>
 </div>
-<script src="{{ url_for('static', path='/todo/js/jquery-slim.js') }}"></script>
-<script src="{{ url_for('static', path='/todo/js/popper.js') }}"></script>
-<script src="{{ url_for('static', path='/todo/js/bootstrap.js') }}"></script>
-</body>
-</html>

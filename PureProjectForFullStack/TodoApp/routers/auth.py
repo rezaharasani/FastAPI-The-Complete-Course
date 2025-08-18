@@ -1,14 +1,16 @@
-from fastapi import Depends, HTTPException, status, APIRouter, Request, Response, Form
 from typing import Optional
-from TodoApp import models
+from datetime import datetime, timedelta, UTC
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
-from TodoApp.database import SessionLocal, engine
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-from datetime import datetime, timedelta
 from jose import jwt, JWTError
+from sqlalchemy.orm import Session
 
-from starlette.responses import RedirectResponse
+from fastapi import Depends, HTTPException, status, APIRouter, Request, Response, Form
+from fastapi.responses import RedirectResponse
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+
+from TodoApp import models
+from TodoApp.database import SessionLocal, engine
+
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -60,8 +62,7 @@ def verify_password(plain_password, hashed_password):
 
 def authenticate_user(username: str, password: str, db):
     user = db.query(models.Users) \
-        .filter(models.Users.username == username) \
-        .first()
+        .filter(models.Users.username == username).first()
 
     if not user:
         return False
@@ -74,10 +75,10 @@ def create_access_token(username: str, user_id: int,
                         expires_delta: Optional[timedelta] = None):
     encode = {"sub": username, "id": user_id}
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    encode.update({"exp": expire})
+        expire = datetime.now(UTC) + timedelta(minutes=15)
+    encode["exp"] = expire
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -93,7 +94,7 @@ async def get_current_user(request: Request):
             logout(request)
         return {"username": username, "id": user_id}
     except JWTError:
-        raise HTTPException(status_code=404, detail="Not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
 
 
 @router.post("/token")
@@ -167,8 +168,7 @@ async def register_user(request: Request, email: str = Form(...), username: str 
     user_model.first_name = firstname
     user_model.last_name = lastname
 
-    hash_password = get_password_hash(password)
-    user_model.hashed_password = hash_password
+    user_model.hashed_password = get_password_hash(password)
     user_model.is_active = True
 
     db.add(user_model)

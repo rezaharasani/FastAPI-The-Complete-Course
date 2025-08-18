@@ -1,7 +1,6 @@
-from starlette import status
-from starlette.responses import RedirectResponse
+from fastapi import Depends, APIRouter, Request, Form, status
+from fastapi.responses import RedirectResponse
 
-from fastapi import Depends, APIRouter, Request, Form
 from TodoApp import models
 from TodoApp.database import engine, SessionLocal
 from sqlalchemy.orm import Session
